@@ -38,6 +38,7 @@ DEFAULT_READER_TEXT = "Automatically detect type"
 log = logging.getLogger(__name__)
 
 # Eric
+
 FILE_PATH = "imported file path"
 
 def add_origin(examples, filename):
