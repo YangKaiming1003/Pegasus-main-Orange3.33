@@ -31,8 +31,8 @@ from Orange.data.storage import Storage
 from Orange.data.table import Table
 from Orange.data.sql.table import SqlTable
 from Orange.statistics import basic_stats
-# kh
-# from Orange.data.data_review import DataReviewer
+
+# Eric from Orange.data.data_review import DataReviewer
 from Orange.widgets.datavalidation.data_review import DataReviewer
 
 
@@ -52,7 +52,7 @@ from Orange.widgets.utils.annotated_data import (create_annotated_table,
 from Orange.widgets.utils.itemmodels import TableModel
 from Orange.widgets.utils.state_summary import format_summary_details
 
-# kh
+# Eric
 from Orange.widgets.data import owfile
 
 class RichTableModel(TableModel):
@@ -574,11 +574,6 @@ class OWDataTable(OWWidget):
                     # + format_part(summary.M))
 
         text.append("")
-
-        # kh
-        print("*********************************")
-        print("********** owdatavalidation.py, FILE_PATH => ", owfile.FILE_PATH)
-        print("*********************************")
       
         return text
 

@@ -2,6 +2,7 @@ import sys, json
 import threading
 import itertools
 import concurrent.futures
+import asyncio
 
 from collections import namedtuple
 from typing import List, Optional
@@ -31,8 +32,8 @@ from Orange.data.storage import Storage
 from Orange.data.table import Table
 from Orange.data.sql.table import SqlTable
 from Orange.statistics import basic_stats
-# kh
-# from Orange.data.data_review import DataReviewer
+
+# Eric from Orange.data.data_review import DataReviewer
 from Orange.widgets.datavalidation.data_review import DataReviewer
 
 
@@ -52,7 +53,7 @@ from Orange.widgets.utils.annotated_data import (create_annotated_table,
 from Orange.widgets.utils.itemmodels import TableModel
 from Orange.widgets.utils.state_summary import format_summary_details
 
-# kh
+# Eric
 from Orange.widgets.data import owfile
 
 class RichTableModel(TableModel):
@@ -574,11 +575,6 @@ class OWDataTable(OWWidget):
                     # + format_part(summary.M))
 
         text.append("")
-
-        # kh
-        print("*********************************")
-        print("********** owdatavalidation.py, FILE_PATH => ", owfile.FILE_PATH)
-        print("*********************************")
       
         return text
 
@@ -651,6 +647,8 @@ class OWDataTable(OWWidget):
         
         PROJECT_ROOT = Path(__file__).resolve().parent
 
+        self.is_ended = False
+
         with open("DataValidation.json", 'r') as f:
             vars = json.load(f)
         DATA_PATH = owfile.FILE_PATH
@@ -658,8 +656,25 @@ class OWDataTable(OWWidget):
         extra_vars = vars["extra_vars"]
         dependent_var = vars["dependent_var"]
         data_validation = DataReviewer(paid_media_vars=media_vars, paid_media_spends=media_vars, extra_vars=extra_vars, dep_var=dependent_var, file_path=DATA_PATH, date_frequency=vars["date_frequency"])
-        data_validation.run_review()
-        QMessageBox.about(self, "Data Validation", "Success")
+        
+        def miner(obj, _dv):
+            print("**********************START**************************")
+            _dv.run_review()
+            obj.is_ended = True
+            print("*********success**********")
+            return 0
+            
+        
+        from threading import Thread
+        t = Thread(target=miner, args=[self, data_validation])
+        t.start()
+        while True:
+            if self.is_ended:
+                QMessageBox.about(self, "Data Validation", "Success")
+                break
+            # print("**************Jackson*************Loading******************")
+        # data_validation.run_review()
+        # QMessageBox.about(self, "Data Validation", "Success")
 
     def _on_select_rows_changed(self):
         for slot in self._inputs:
