@@ -2,6 +2,7 @@ import sys, json
 import threading
 import itertools
 import concurrent.futures
+import asyncio
 
 from collections import namedtuple
 from typing import List, Optional
@@ -646,6 +647,8 @@ class OWDataTable(OWWidget):
         
         PROJECT_ROOT = Path(__file__).resolve().parent
 
+        self.is_ended = False
+
         with open("DataValidation.json", 'r') as f:
             vars = json.load(f)
         DATA_PATH = owfile.FILE_PATH
@@ -653,8 +656,25 @@ class OWDataTable(OWWidget):
         extra_vars = vars["extra_vars"]
         dependent_var = vars["dependent_var"]
         data_validation = DataReviewer(paid_media_vars=media_vars, paid_media_spends=media_vars, extra_vars=extra_vars, dep_var=dependent_var, file_path=DATA_PATH, date_frequency=vars["date_frequency"])
-        data_validation.run_review()
-        QMessageBox.about(self, "Data Validation", "Success")
+        
+        def miner(obj, _dv):
+            print("**********************START**************************")
+            _dv.run_review()
+            obj.is_ended = True
+            print("*********success**********")
+            return 0
+            
+        
+        from threading import Thread
+        t = Thread(target=miner, args=[self, data_validation])
+        t.start()
+        while True:
+            if self.is_ended:
+                QMessageBox.about(self, "Data Validation", "Success")
+                break
+            # print("**************Jackson*************Loading******************")
+        # data_validation.run_review()
+        # QMessageBox.about(self, "Data Validation", "Success")
 
     def _on_select_rows_changed(self):
         for slot in self._inputs:
