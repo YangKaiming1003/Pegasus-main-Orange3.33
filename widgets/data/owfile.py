@@ -451,7 +451,7 @@ class OWFile(widget.OWWidget, RecentPathsWComboMixin):
         # Eric
         global FILE_PATH
         FILE_PATH = self.loaded_file
-
+        
         return None
 
     def _get_reader(self) -> FileFormat:

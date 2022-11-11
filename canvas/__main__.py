@@ -259,7 +259,7 @@ def pull_notifications():
 
         # if no custom icon is set, default to notif type icon
         if YAMLnotif.icon is None and YAMLnotif.type is not None:
-            YAMLnotif.icon = "canvas/icons/orange-splash-screen-01.png"
+            YAMLnotif.icon = "canvas/icons/pegasus-splash-screen-01.png"
 
         # instantiate and return Notification
         notif = YAMLnotif.toNotification()
