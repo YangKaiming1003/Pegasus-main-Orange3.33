@@ -68,6 +68,8 @@ class Config(config.Config):
     Orange application configuration
     """
     OrganizationDomain = "biolab.si"
+
+    # Eric renamed Orange to Pegasus
     ApplicationName = "Pegasus 2"
     ApplicationVersion = Orange.__version__
     AppUserModelID = "Biolab.Orange"  # AppUserModelID for windows task bar
@@ -99,7 +101,7 @@ class Config(config.Config):
         Return the main application icon.
         """
         path = pkg_resources.resource_filename(
-            __name__, "icons/orange-256.png"
+            __name__, "icons/pegasus-ico.png"
         )
         return QIcon(path)
 
@@ -107,7 +109,7 @@ class Config(config.Config):
     def splash_screen():
         splash_n = random.randint(1, 3)
         path = pkg_resources.resource_filename(
-            __name__, f"icons/orange-splash-screen-01.png")
+            __name__, f"icons/pegasus-splash-screen-01.png")
         pm = QPixmap(path)
 
         version = Config.ApplicationVersion
