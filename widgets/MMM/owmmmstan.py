@@ -655,7 +655,7 @@ class OWDataTable(OWWidget):
         import pystan
         import os
 
-        with open("DataValidation.json", 'r') as f:
+        with open("MMM.json", 'r') as f:
             vars = json.load(f)
         
         sns.color_palette("husl")
@@ -669,22 +669,22 @@ class OWDataTable(OWWidget):
             os.mkdir(output_dir)
         df = pd.read_csv(owfile.FILE_PATH)
         df.to_csv(os.path.join(output_dir, "original_data.csv"), index=False)
-        mdip_cols=[col for col in df.columns if vars["mdip_cols"] in col]
-        mdsp_cols=[col for col in df.columns if vars["mdsp_cols"] in col]
-        me_cols = [col for col in df.columns if vars["me_cols"] in col]
-        st_cols = [vars["st_cols"]]
-        mrkdn_cols = [col for col in df.columns if vars["mrkdn_cols"] in col]
-        hldy_cols = [col for col in df.columns if vars["hldy_cols"] in col]
-        seas_cols = [col for col in df.columns if vars["seas_cols"] in col]
-        base_vars = me_cols+st_cols+mrkdn_cols+hldy_cols+seas_cols
-        sales_cols =[vars["sales_cols"]]
-        head = df[['wk_strt_dt']+mdip_cols+['sales']].head()
+        media_impression=[col for col in df.columns if vars["media_impression"] in col]
+        media_spending=[col for col in df.columns if vars["media_spending"] in col]
+        macro_economy = [col for col in df.columns if vars["macro_economy"] in col]
+        store_count = [vars["store_count"]]
+        markdown = [col for col in df.columns if vars["markdown"] in col]
+        retail_holidays = [col for col in df.columns if vars["retail_holidays"] in col]
+        seasonality = [col for col in df.columns if vars["seasonality"] in col]
+        base_vars = macro_economy+store_count+markdown+retail_holidays+seasonality
+        sales =[vars["sales"]]
+        head = df[['wk_strt_dt']+media_impression+['sales']].head()
         head.to_csv(os.path.join(output_dir, "head.csv"), index=False)
         plt.figure(figsize=(24,20))
-        sns.heatmap(df[mdip_cols+['sales']].corr(), square=True, annot=True, vmax=1, vmin=-1, cmap='RdBu')
+        sns.heatmap(df[media_impression+['sales']].corr(), square=True, annot=True, vmax=1, vmin=-1, cmap='RdBu')
         plt.savefig(os.path.join(output_dir, "first.png"))
         plt.figure(figsize=(50,50))
-        sns.pairplot(df[mdip_cols+['sales']], vars=mdip_cols+['sales'])
+        sns.pairplot(df[media_impression+['sales']], vars=media_impression+['sales'])
         plt.savefig(os.path.join(output_dir, "second.png"))
 
         def apply_adstock(x, L, P, D):
@@ -782,11 +782,11 @@ class OWDataTable(OWWidget):
                 data = json.load(fp)
             return data
 
-        df_ctrl, sc_ctrl = mean_center_trandform(df, ['sales']+me_cols+st_cols+mrkdn_cols)
-        df_ctrl = pd.concat([df_ctrl, df[hldy_cols+seas_cols]], axis=1)
-        pos_vars = [col for col in base_vars if col not in seas_cols]
+        df_ctrl, sc_ctrl = mean_center_trandform(df, ['sales']+macro_economy+store_count+markdown)
+        df_ctrl = pd.concat([df_ctrl, df[retail_holidays+seasonality]], axis=1)
+        pos_vars = [col for col in base_vars if col not in seasonality]
         X1 = df_ctrl[pos_vars].values
-        pn_vars = seas_cols
+        pn_vars = seasonality
         X2 = df_ctrl[pn_vars].values
 
         ctrl_data = {
@@ -830,10 +830,10 @@ class OWDataTable(OWWidget):
         df['base_sales'] = base_sales*sc_ctrl['sales']
         print('mape: ', mean_absolute_percentage_error(df['sales'], df['base_sales']))
         df_mmm, sc_mmm = mean_log1p_trandform(df, ['sales', 'base_sales'])
-        mu_mdip = df[mdip_cols].apply(np.mean, axis=0).values
+        mu_mdip = df[media_impression].apply(np.mean, axis=0).values
         max_lag = 8
-        num_media = len(mdip_cols)
-        X_media = np.concatenate((np.zeros((max_lag-1, num_media)), df[mdip_cols].values), axis=0)
+        num_media = len(media_impression)
+        X_media = np.concatenate((np.zeros((max_lag-1, num_media)), df[media_impression].values), axis=0)
         X_ctrl = df_mmm['base_sales'].values.reshape(len(df),1)
 
         model_data2 = {
@@ -853,7 +853,7 @@ class OWDataTable(OWWidget):
         fit2 = sm2.sampling(data=model_data2, iter=1000, chains=3)
         fit2_result = fit2.extract()
 
-        def extract_mmm(fit_result, max_lag=max_lag, media_vars=mdip_cols, ctrl_vars=['base_sales'], extract_param_list=True):
+        def extract_mmm(fit_result, max_lag=max_lag, media_vars=media_impression, ctrl_vars=['base_sales'], extract_param_list=True):
             mmm = {}
             mmm['max_lag'] = max_lag
             mmm['media_vars'], mmm['ctrl_vars'] = media_vars, ctrl_vars
@@ -877,7 +877,7 @@ class OWDataTable(OWWidget):
             mmm['adstock_params'] = adstock_params
             return mmm
 
-        mmm = extract_mmm(fit2, max_lag=max_lag, media_vars=mdip_cols, ctrl_vars=['base_sales'])
+        mmm = extract_mmm(fit2, max_lag=max_lag, media_vars=media_impression, ctrl_vars=['base_sales'])
 
         beta_media = {}
         for i in range(len(mmm['media_vars'])):
@@ -944,7 +944,7 @@ class OWDataTable(OWWidget):
                 mean_absolute_percentage_error(y_true2, y_pred))
             return mc_df
 
-        def calc_media_contrib_pct(mc_df, media_vars=mdip_cols, sales_col='sales', period=52):
+        def calc_media_contrib_pct(mc_df, media_vars=media_impression, sales_col='sales', period=52):
             '''
             returns:
             mc_pct: percentage over total sales
