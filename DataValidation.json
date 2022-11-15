@@ -1,0 +1,6 @@
+    {
+        "media_vars": ["ooh_spend", "bvod_spend", "tv_spend", "radio_spend", "ppc_spend", "facebook_spend", "display_video_spend"],
+        "extra_vars": ["rainfall_index", "temperature_index"],
+        "dependent_var": "total_sales",
+        "date_frequency": "weekly"
+    }
