@@ -1,0 +1,19 @@
+{
+    "media_impression": "mdip_",
+    "comments for mddia_impression value":"impressions of 13 media channels: direct mail, insert, newspaper, digital audio, radio, TV, digital video, social media, online display, email, SMS, affiliates, SEM.",
+    "media_spending": "mdsp_",
+    "comments for media_spending value":"spending of media channels.",
+    "macro_economy": "me_",
+    "comments for macro_economy value": "CPI, gas price.",
+    "store_count": "st_ct",
+    "markdown": "mrkdn_",
+    "comments for markdown value": "markdown/discount.",
+    "retail_holidays": "hldy_",
+    "comments for retail_holidays value": "one-hot encoded.",
+    "seasonality": "seas_",
+    "comments for seasonality value": "month, with Nov and Dec broke into weeks. One-hot encoded.",
+    "sales": "sales",
+    "ctrl_code1":"\ndata {\n  int N;\n  int K1;\n  int K2;\n  real max_intercept;\n  matrix[N, K1] X1;\n  matrix[N, K2] X2;\n  vector[N] y; \n}\nparameters {\n  vector<lower=0>[K1] beta1;\n  vector[K2] beta2;\n  real<lower=0, upper=max_intercept> alpha;\n  real<lower=0> noise_var;\n}\nmodel {\n  beta1 ~ normal(0, 1); \n  beta2 ~ normal(0, 1); \n  noise_var ~ inv_gamma(0.05, 0.05 * 0.01);\n  y ~ normal(X1*beta1 + X2*beta2 + alpha, sqrt(noise_var));\n}\n",
+    "model_code2": "\nfunctions {\n  real Adstock(vector t, row_vector weights) {\n    return dot_product(t, weights) / sum(weights);\n  }\n}\ndata {\n  int<lower=1> N;\n  real y[N];\n  int<lower=1> max_lag;\n  int<lower=1> num_media;\n  matrix[N+max_lag-1, num_media] X_media;\n  real mu_mdip[num_media];\n  int<lower=1> num_ctrl;\n  matrix[N, num_ctrl] X_ctrl;\n}\nparameters {\n  real<lower=0> noise_var;\n  real tau;\n  vector<lower=0>[num_media+num_ctrl] beta;\n  vector<lower=0,upper=1>[num_media] decay;\n  vector<lower=0,upper=ceil(max_lag/2)>[num_media] peak;\n}\ntransformed parameters {\n  real cum_effect;\n  matrix[N, num_media] X_media_adstocked;\n  matrix[N, num_media+num_ctrl] X;\n  row_vector[max_lag] lag_weights;\n  for (nn in 1:N) {\n    for (media in 1 : num_media) {\n      for (lag in 1 : max_lag) {\n        lag_weights[max_lag-lag+1] <- pow(decay[media], (lag - 1 - peak[media]) ^ 2);\n      }\n     cum_effect <- Adstock(sub_col(X_media, nn, media, max_lag), lag_weights);\n     X_media_adstocked[nn, media] <- log1p(cum_effect/mu_mdip[media]);\n    }\n  X <- append_col(X_media_adstocked, X_ctrl);\n  } \n}\nmodel {\n  decay ~ beta(3,3);\n  peak ~ uniform(0, ceil(max_lag/2));\n  tau ~ normal(0, 5);\n  for (i in 1 : num_media+num_ctrl) {\n    beta[i] ~ normal(0, 1);\n  }\n  noise_var ~ inv_gamma(0.05, 0.05 * 0.01);\n  y ~ normal(tau + X * beta, sqrt(noise_var));\n}\n",
+    "model_code3": "\nfunctions {\n  real Hill(real t, real ec, real slope) {\n  return 1 / (1 + (t / ec)^(-slope));\n  }\n}\ndata {\n  int<lower=1> N;\n  vector[N] y;\n  vector[N] X;\n}\nparameters {\n  real<lower=0> noise_var;\n  real<lower=0> beta_hill;\n  real<lower=0,upper=1> ec;\n  real<lower=0> slope;\n}\ntransformed parameters {\n  vector[N] mu;\n  for (i in 1:N) {\n    mu[i] <- beta_hill * Hill(X[i], ec, slope);\n  }\n}\nmodel {\n  slope ~ gamma(3, 1);\n  ec ~ beta(2, 2);\n  beta_hill ~ normal(0, 1);\n  noise_var ~ inv_gamma(0.05, 0.05 * 0.01); \n  y ~ normal(mu, sqrt(noise_var));\n}\n"
+}
